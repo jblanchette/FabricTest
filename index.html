@@ -14,6 +14,14 @@
  			width: 800px;
  		}
 
+ 		#panel {
+ 			text-align: center;
+ 			font-size: 2rem;
+ 			padding: 1rem;
+ 			border: 1px solid #333;
+ 		}
+
+
  	</style>
  	<script src="fabric.min.js"></script>
  	<script type="text/javascript">
@@ -29,10 +37,11 @@
  		function init() {
  			var canvas = new fabric.Canvas('main');
 
- 			canvas.on("object:moving", function (e) {
 
- 				console.log(e);
+ 			canvas.on("object:moving", function (e) {
  				var origState = e.target.originalState;
+ 				var panelX = document.getElementById("clip-x");
+ 				var panelY = document.getElementById("clip-y");
 
  				clipX = (e.target.left) - 150;
  				clipY = (e.target.top) - 20;
@@ -44,6 +53,9 @@
  				});
 
  				canvas.renderAll();
+
+ 				panelX.innerHTML = "X Clip: " + clipX;
+ 				panelY.innerHTML = "Y Clip: " + clipY;
  			});
 
  			fabric.Image.fromURL("http://arhe.co/wp-content/uploads/2013/10/tom-brady_GOAT-560x350.jpg", function (img) {
@@ -51,8 +63,7 @@
  				mainImage.set({
  					clipTo: clipFunc,
  					top: 20,
- 					left: 150,
- 					hasControls: false
+ 					left: 150
  				});
 
  				canvas.add(mainImage).setActiveObject(mainImage);
@@ -64,6 +75,11 @@
  	<div id="wrapper">
  		<div id="holder">
  			<canvas id="main" width="800" height="600"></canvas>
+ 			<br><br>
+ 			<div id="panel">
+ 				<div id="clip-x">X Clip: 0</div><br>
+ 				<div id="clip-y">Y Clip: 0</div>
+ 			</div>
  		</div>
  	</div>
  </body>
