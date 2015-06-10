@@ -10,7 +10,7 @@
  			margin: 0 auto;
  			text-align: center;
  			border: 1px solid #333;
- 			height: 600px;
+ 			height: 400px;
  			width: 800px;
  		}
 
@@ -21,52 +21,148 @@
  			border: 1px solid #333;
  		}
 
+ 		#side_wrapper {
+ 			margin-left: 275px;
+ 			margin-top: 10px;
+ 		}
 
+ 		h3 {
+ 			margin: 0;
+ 			padding: 0;
+ 		}
  	</style>
  	<script src="fabric.min.js"></script>
  	<script type="text/javascript">
- 		var mainImage;
- 		var clipX = 0, clipY = 0;
+ 		var canvas, panelX, panelY, side;
+ 		var mainImage, sideImage;
+
+ 		var clipperX = 250;
+ 		var clipperY = 30;
 
  		window.onload = init;
 
- 		function clipFunc (ctx) {
- 			ctx.arc(clipX, clipY, 150, 0, Math.PI * 2, true)
+ 		function doClip() {
+ 			var mX = mainImage.get("left");
+ 			var mY = mainImage.get("top");
+ 			var mW = mainImage.get("width");
+ 			var mH = mainImage.get("height");
+
+ 			var clipX = (clipperX ) - mX;
+ 			var clipY = (clipperY ) - mY;
+
+ 			var extra = 125;
+
+ 			sideImage.set({
+ 				width: mW,
+ 				height: mH,
+ 				left: -clipX,
+ 				top: -clipY,
+ 				clipTo: function (ctx) {
+ 					ctx.arc(clipX - extra, clipY - 30, 150, 0, Math.PI * 2, true)
+ 				},
+ 				visible: true
+ 			});
+
+ 			panelX.innerHTML = "(" + mX + ")" + -clipX + " : " + (clipX / 2);
+ 			panelY.innerHTML = "(" + mY + ")" + -clipY + " : " + (clipY / 2);
+ 			side.renderAll();
+ 		}
+
+ 		function zoom(which) {
+ 			console.log("Running? ", which);
+
+ 			if (which === "in") {
+ 				mainImage.set({
+ 					width: mainImage.get("width") + 10,
+ 					height: mainImage.get("height") + 10,
+ 				});
+
+ 				sideImage.set({
+ 					width: mainImage.get("width") + 10,
+ 					height: mainImage.get("height") + 10,
+ 				});
+ 			} else {
+ 				mainImage.set({
+ 					width: mainImage.get("width") - 10,
+ 					height: mainImage.get("height") - 10,
+ 				});
+
+ 				sideImage.set({
+ 					width: mainImage.get("width") - 10,
+ 					height: mainImage.get("height") - 10,
+ 				});
+ 			}
+
+
+ 			side.renderAll();
+ 			canvas.renderAll();
  		}
 
  		function init() {
- 			var canvas = new fabric.Canvas('main');
+ 			panelX = document.getElementById("clip-x");
+ 			panelY = document.getElementById("clip-y");
+ 			canvas = new fabric.Canvas('main');
+ 			canvas.backgroundColor = "gray";
 
+ 			side = new fabric.Canvas('side');
+ 			side.backgroundColor = "gray";
+
+ 			var zoomInButton = document.getElementById("zoom_in");
+ 			var zoomOutButton = document.getElementById("zoom_out");
+
+ 			var clipButton = document.getElementById("clip");
+
+ 			zoomInButton.addEventListener("click", function (e) {
+ 				zoom("in");
+ 			});
+ 			zoomOutButton.addEventListener("click", function (e) {
+ 				zoom("out");
+ 			});
+
+ 			clipButton.addEventListener("click", function (e) {
+ 				doClip();
+ 			});
 
  			canvas.on("object:moving", function (e) {
- 				var origState = e.target.originalState;
- 				var panelX = document.getElementById("clip-x");
- 				var panelY = document.getElementById("clip-y");
-
- 				clipX = (e.target.left) - 150;
- 				clipY = (e.target.top) - 20;
-
- 				e.target.set({
- 					left: 150,
- 					top: 20,
- 					clipTo: clipFunc
- 				});
-
- 				canvas.renderAll();
-
- 				panelX.innerHTML = "X Clip: " + clipX;
- 				panelY.innerHTML = "Y Clip: " + clipY;
+ 				doClip();
  			});
+
+
+ 			var clipper = new fabric.Circle({
+			  left: clipperX,
+			  top: clipperY,
+			  fill: "transparent",
+			  radius: 150,
+			  stroke: "white",
+			  strokeWidth: 2,
+			  hasControls: false,
+			  selectable: false
+			});
+
+ 			canvas.add(clipper);
 
  			fabric.Image.fromURL("http://arhe.co/wp-content/uploads/2013/10/tom-brady_GOAT-560x350.jpg", function (img) {
  				mainImage = img;
+
  				mainImage.set({
- 					clipTo: clipFunc,
- 					top: 20,
- 					left: 150
+ 					top: 0,
+ 					left: 0
  				});
 
  				canvas.add(mainImage).setActiveObject(mainImage);
+ 				canvas.bringToFront(clipper);
+ 			});
+
+ 			fabric.Image.fromURL("http://arhe.co/wp-content/uploads/2013/10/tom-brady_GOAT-560x350.jpg", function (img) {
+ 				sideImage = img;
+
+ 				sideImage.set({
+ 					top: 0,
+ 					left: 0,
+ 					visible: false
+ 				});
+
+ 			 	side.add(sideImage);
  			});
  		}
  	</script>
@@ -74,11 +170,21 @@
  <body>
  	<div id="wrapper">
  		<div id="holder">
- 			<canvas id="main" width="800" height="600"></canvas>
+ 			<canvas id="main" width="800" height="400"></canvas>
+ 			<div id="side_wrapper">
+ 				<canvas id="side" width="300" height="300"></canvas>
+ 			</div>
  			<br><br>
  			<div id="panel">
- 				<div id="clip-x">X Clip: 0</div><br>
+ 				<div id="clip-x">X Clip: 0</div>
  				<div id="clip-y">Y Clip: 0</div>
+ 				<h3>Zoom</h3>
+ 				<button id="zoom_out">Zoom Out</button>
+ 				<button id="zoom_in">Zoom In</button>
+
+ 				<br>
+
+ 				<button id="clip">Clip Image</button>
  			</div>
  		</div>
  	</div>
